@@ -48,28 +48,20 @@ public class PomodoroStopTimerUtils {
         preferences.edit().putInt("pause", (int) millis / 1000).apply();
     }
 
-    /**
-     * Tasks executed when the session is cancelled prematurely
-     */
+
     public static void sessionCancel(Context context, SharedPreferences preferences) {
         updateCurrentlyRunningServiceType(preferences, context, POMODORO);
         stopTimer(context);
         sendBroadcast(context);
     }
 
-    /**
-     * Update PomodoroActivity Elements through  broadcast
-     */
+
     private static void sendBroadcast(Context context) {
         LocalBroadcastManager completedBroadcastManager = LocalBroadcastManager.getInstance(context);
         completedBroadcastManager.sendBroadcast(
                 new Intent(COMPLETE_ACTION_BROADCAST));
     }
 
-    /**
-     * Stops service and resets CountDownTimer to initial value.
-     * Duration can be initial value of either POMODORO, SHORT_BREAK or LONG_BREAK.
-     */
     private static void stopTimer(Context context) {
         Intent serviceIntent = new Intent(context, PomodoroCountDownTimerService.class);
         context.stopService(serviceIntent);

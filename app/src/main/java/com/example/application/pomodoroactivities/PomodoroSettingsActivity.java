@@ -63,10 +63,6 @@ public class PomodoroSettingsActivity extends AppCompatActivity implements Adapt
         ringingSeekBar.setOnSeekBarChangeListener(this);
     }
 
-    /**
-     * Separate method to populate the spinners
-     * This will keep the onCreate() method clean
-     */
     private void initSpinner() {
         // Create an array adapter for all three spinners using the string array
         ArrayAdapter<CharSequence> workDurationAdapter = ArrayAdapter.createFromResource(this,
@@ -103,15 +99,6 @@ public class PomodoroSettingsActivity extends AppCompatActivity implements Adapt
 
     }
 
-    /**
-     * Save the latest selected item position from the spinners
-     * into SharedPreferences
-     *
-     * @param parent
-     * @param view
-     * @param position
-     * @param id
-     */
     @Override
     public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
         // initialize the editor
@@ -140,11 +127,6 @@ public class PomodoroSettingsActivity extends AppCompatActivity implements Adapt
         editor.apply();
     }
 
-    /**
-     * When nothing is selected from the spinner
-     *
-     * @param parent
-     */
     @Override
     public void onNothingSelected(AdapterView<?> parent) {
 

@@ -68,13 +68,13 @@ public class PomodoroCountDownTimerService extends Service {
         PendingIntent pendingIntent = PendingIntent.getActivity(this,
                 0, notificationIntent, 0);
 
-        //For "Complete" button - Intent and PendingIntent
+        //For "Complete" button
         Intent completeIntent = new Intent(this, PomodoroStopTimerActionReceiver.class)
                 .putExtra(INTENT_NAME_ACTION, INTENT_VALUE_COMPLETE);
         PendingIntent completeActionPendingIntent = PendingIntent.getBroadcast(this,
                 1, completeIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        //For "Cancel" button - Intent and PendingIntent
+        //For "Cancel" button
         Intent cancelIntent = new Intent(this, PomodoroStopTimerActionReceiver.class)
                 .putExtra(INTENT_NAME_ACTION, INTENT_VALUE_CANCEL);
         PendingIntent cancelActionPendingIntent = PendingIntent.getBroadcast(this,

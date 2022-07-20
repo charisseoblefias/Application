@@ -294,12 +294,6 @@ public class PomodoroActivity extends AppCompatActivity implements View.OnClickL
         }
     }
 
-    /**
-     * Changes textOn, textOff for Toggle Button & Resets CountDownTimer to initial value,
-     * according to value of currentlyRunningServiceType.
-     *
-     * @param currentlyRunningServiceType can be POMODORO, SHORT_BREAK or LONG_BREAK.
-     */
     private void changeToggleButtonStateText(int currentlyRunningServiceType) {
         timerButton.setChecked(isServiceRunning(PomodoroCountDownTimerService.class));
         if (currentlyRunningServiceType == POMODORO) {
@@ -313,9 +307,6 @@ public class PomodoroActivity extends AppCompatActivity implements View.OnClickL
         timerButton.setChecked(timerButton.isChecked());
     }
 
-    /**
-     * Registers LocalBroadcastReceivers.
-     */
     private void registerLocalBroadcastReceivers() {
         LocalBroadcastManager.getInstance(this).registerReceiver((stoppedBroadcastReceiver),
                 new IntentFilter(STOP_ACTION_BROADCAST));
@@ -327,9 +318,6 @@ public class PomodoroActivity extends AppCompatActivity implements View.OnClickL
                 new IntentFilter(START_ACTION_BROADCAST));
     }
 
-    /**
-     * Unregisters LocalBroadcastReceivers.
-     */
     private void unregisterLocalBroadcastReceivers() {
         LocalBroadcastManager.getInstance(this).unregisterReceiver(stoppedBroadcastReceiver);
         LocalBroadcastManager.getInstance(this).unregisterReceiver(countDownReceiver);
@@ -341,12 +329,6 @@ public class PomodoroActivity extends AppCompatActivity implements View.OnClickL
         countDownTextView.setText(duration);
     }
 
-    /**
-     * Checks if a service is running or not.
-     *
-     * @param serviceClass name of the Service class.
-     * @return true if service is running, otherwise false.
-     */
     private boolean isServiceRunning(Class<?> serviceClass) {
         ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
         if (manager != null) {
@@ -359,11 +341,6 @@ public class PomodoroActivity extends AppCompatActivity implements View.OnClickL
         return false;
     }
 
-    /**
-     * Creates layout for alert-dialog, which is shown when Pomodoro (Work-Session) is completed.
-     *
-     * @return alert-dialog
-     */
     private AlertDialog createTametuCompletionAlertDialog() {
         if (alertDialog != null)
             alertDialog.cancel();
@@ -410,20 +387,12 @@ public class PomodoroActivity extends AppCompatActivity implements View.OnClickL
         return alertDialogBuilder.create();
     }
 
-    /**
-     * Displays alert dialog when a Pomodoro (Work-Session) is finished.
-     */
     private void displayTametuCompletionAlertDialog() {
         if (currentlyRunningServiceType != POMODORO && isAppVisible && !alertDialog.isShowing() && !isServiceRunning(PomodoroCountDownTimerService.class)) {
             alertDialog.show();
         }
     }
 
-    /**
-     * Sets appropriate values for medium and large button, and starts service; either SHORT_BREAK or LONG_BREAK.
-     *
-     * @param currentButtonText button text of either medium button or large button.
-     */
     private void startBreakFromAlertDialog(String currentButtonText) {
         long breakDuration = 0;
         if (currentButtonText.equals(getString(R.string.start_long_break))) {
@@ -442,11 +411,6 @@ public class PomodoroActivity extends AppCompatActivity implements View.OnClickL
         startTimer(breakDuration, this);
         timerButton.setChecked(isServiceRunning(PomodoroCountDownTimerService.class));
     }
-
-    /**
-     * Displays a notification when foreground service is finished.
-     */
-
 
     @Override
     public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
