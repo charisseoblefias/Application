@@ -1,0 +1,75 @@
+<resources>
+    <string name="app_name">ComFiler</string>
+    <string name="delete_confirmation">Confirmation</string>
+    <string name="sureToDelete">Are you sure you want to delete the task?</string>
+    <string name="yes">Yes</string>
+    <string name="no">No</string>
+    <string name="confirmation">Completed the task!</string>
+    <string name="sureToMarkAsComplete">Are you sure you want to mark this task as completed?</string>
+    <string name="congrats_you_have_completed_the_task_successfully">You have completed the task successfully!</string>
+    <string name="type_something">Type something....</string>
+    <string name="title">Title</string>
+    <string name="search_note">Search Note</string>
+    <string name="notes">Notes</string>
+    <string name="new_note">New Note</string>
+
+    <string name="work_duration">Work Time duration :</string>
+    <string name="short_break_duration">Short Break duration :</string>
+    <string name="long_break_duration">Long Break duration :</string>
+    <string name="work_duration_key">WORK_DURATION</string>
+    <string name="lba">Start Long Break after :</string>
+    <string name="set_ticking_volume">Timer volume :</string>
+    <string name="set_ringing_volume">Alarm volume :</string>
+
+
+    <string name="short_break_duration_key">SHORT_BREAK_DURATION</string>
+    <string name="long_break_duration_key">LONG_BREAK_DURATION</string>
+    <string name="work_session_count_key">WORK_SESSION_COUNT</string>
+    <string name="task_on_hand_count_key">TASK_ON_HAND_COUNT</string>
+    <string name="start_long_break_after_key">LONG_BREAK_AFTER_DURATION</string>
+    <string-array name="work_duration_array">
+        <item>20 minutes</item>
+        <item>25 minutes</item>
+        <item>30 minutes</item>
+        <item>40 minutes</item>
+        <item>55 minutes</item>
+    </string-array>
+    <string-array name="short_break_duration_array">
+        <item>3 minutes</item>
+        <item>5 minutes</item>
+        <item>10 minutes</item>
+        <item>15 minutes</item>
+    </string-array>
+    <string-array name="start_long_break_after_array">
+        <item>2 sessions</item>
+        <item>3 sessions</item>
+        <item>4 sessions</item>
+        <item>5 sessions</item>
+        <item>6 sessions</item>
+    </string-array>
+    <string-array name="long_break_duration_array">
+        <item>10 minutes</item>
+        <item>15 minutes</item>
+        <item>20 minutes</item>
+        <item>25 minutes</item>
+    </string-array>
+
+    <string name="current_task">Current Task</string>
+    <string name="change_task">Change</string>
+    <string name="work_sessions_completed">Work sessions completed</string>
+    <string name="complete_imageview_content_desc">Complete Image</string>
+    <string name="settings_imageview_content_desc">Settings Image</string>
+    <string name="start_pomodoro">Start Pomodoro</string>
+    <string name="cancel_pomodoro">Cancel Pomodoro</string>
+    <string name="start_short_break">Short Break</string>
+    <string name="skip_short_break">Skip Short Break</string>
+    <string name="start_long_break">Long Break</string>
+    <string name="skip_long_break">Skip Long Break</string>
+    <string name="skip_break">Skip Break</string>
+    <string name="currently_running_service_type_key">CURRENTLY_RUNNING_SERVICE_TYPE</string>
+    <string name="pomodoro_completion_alert_message">It\'s time for a break.</string>
+    <string name="cancel_notification_toast">Cancel</string>
+    <string name="break_over_notification_title">Break\'s over.</string>
+    <string name="session_over_notification_content_text">Time to relax. Start a break</string>
+    <string name="break_over_notification_content_text">Let\'s get this done.</string>
+</resources>
