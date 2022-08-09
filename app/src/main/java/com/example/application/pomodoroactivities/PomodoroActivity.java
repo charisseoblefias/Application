@@ -1,427 +1,534 @@
 package com.example.application.pomodoroactivities;
 
-import static com.example.application.PomodoroUtils.PomodoroConstants.COMPLETE_ACTION_BROADCAST;
-import static com.example.application.PomodoroUtils.PomodoroConstants.COUNTDOWN_BROADCAST;
-import static com.example.application.PomodoroUtils.PomodoroConstants.LONG_BREAK;
-import static com.example.application.PomodoroUtils.PomodoroConstants.LONG_BREAK_DURATION_KEY;
-import static com.example.application.PomodoroUtils.PomodoroConstants.POMODORO;
-import static com.example.application.PomodoroUtils.PomodoroConstants.SHORT_BREAK;
-import static com.example.application.PomodoroUtils.PomodoroConstants.SHORT_BREAK_DURATION_KEY;
-import static com.example.application.PomodoroUtils.PomodoroConstants.START_ACTION_BROADCAST;
-import static com.example.application.PomodoroUtils.PomodoroConstants.START_LONG_BREAK_AFTER_KEY;
-import static com.example.application.PomodoroUtils.PomodoroConstants.STOP_ACTION_BROADCAST;
-import static com.example.application.PomodoroUtils.PomodoroConstants.WORK_DURATION_KEY;
-import static com.example.application.PomodoroUtils.PomodoroStartTimerUtils.startTimer;
-import static com.example.application.PomodoroUtils.PomodoroStopTimerUtils.sessionCancel;
-import static com.example.application.PomodoroUtils.PomodoroStopTimerUtils.sessionComplete;
-
-import android.app.ActivityManager;
-import android.app.AlertDialog;
-import android.content.BroadcastReceiver;
+import android.app.Activity;
+import android.app.Notification;
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
+import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentFilter;
-import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
+import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
+import android.os.CountDownTimer;
+import android.util.Log;
 import android.view.View;
 import android.widget.Button;
-import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.TextView;
-import android.widget.ToggleButton;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.localbroadcastmanager.content.LocalBroadcastManager;
+import androidx.constraintlayout.widget.ConstraintLayout;
+import androidx.core.app.NotificationCompat;
+import androidx.core.app.NotificationManagerCompat;
 
-import com.example.application.PomodoroUtils.PomodoroUtils;
 import com.example.application.R;
-import com.example.application.pomodorotimer.PomodoroCountDownTimerService;
 
-import java.util.Date;
+import java.util.Locale;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
+public class PomodoroActivity extends Activity {
 
-public class PomodoroActivity extends AppCompatActivity implements View.OnClickListener,
-        SharedPreferences.OnSharedPreferenceChangeListener {
-
-
-    public static int currentlyRunningServiceType; // Type of Service can be POMODORO, SHORT_BREAK or LONG_BREAK
-    BroadcastReceiver stoppedBroadcastReceiver;
-    BroadcastReceiver countDownReceiver;
-    BroadcastReceiver completedBroadcastReceiver;
-    BroadcastReceiver startBroadcastReceiver;
-    @BindView(R.id.settings_imageview_main)
-    ImageView settingsImageView;
-    @BindView(R.id.timer_button_main)
-    ToggleButton timerButton;
-    @BindView(R.id.countdown_textview_main)
-    TextView countDownTextView;
-    @BindView(R.id.finish_imageview_main)
-    ImageView finishImageView; // (Complete Button)
-    private long workDuration; // Time Period for Pomodoro (Work-Session)
-    private String workDurationString; // Time Period for Pomodoro in String
-    private long shortBreakDuration; // Time Period for Short-Break
-    private String shortBreakDurationString; // Time Period for Short-Break in String
-    private long longBreakDuration; // Time Period for Long-Break
-    private String longBreakDurationString; // Time Period for Long-Break in String
-    private SharedPreferences preferences;
-    private AlertDialog alertDialog;
-    private boolean isAppVisible = true;
-    private String currentCountDown; // Current duration for Work-Session, Short-Break or Long-Break
-
+    private final static long DEFAULT_WORK_DURATION = 1500000;
+    private final static long DEFAULT_BREAK_DURATION = 300000;
+    private final static int REQUEST_CODE_SETTINGS = 0;
+    private final static int COUNTDOWN_INTERVAL = 150;
+    private final static int NOTIFICATION_ID = 0;
+    private final static String CHANNEL_ID = "togglechannel";
+    private CountDownTimer countDownTimer;
+    private TextView countdownTimeLabel;
+    private ProgressBar countdownProgressBar;
+    private Button startPauseButton;
+    private Button cancelButton;
+    private Button settingsButton;
+    private ConstraintLayout mainLayout;
+    private CharSequence startStatusLabel;
+    private CharSequence pauseStatusLabel;
+    private CharSequence resumeStatusLabel;
+    private long setWorkDurationInMillis = DEFAULT_WORK_DURATION;
+    private long setBreakDurationInMillis = DEFAULT_BREAK_DURATION;
+    private boolean isCountdownRunning;
+    private long currentTotalDurationInMillis;
+    private long timeLeftInMillis;
+    private boolean isWorkMode;
+    private int colourPrimary;
+    private int colourSecondary;
+    private int colourText;
+    private int colourText1;
+    private int colourBackground;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_pomodoro);
-        isAppVisible = true;
-        preferences = PreferenceManager.getDefaultSharedPreferences(this);
 
-        ButterKnife.bind(this);
-        setOnClickListeners();
+        // Initialize the "set timer".
+        currentTotalDurationInMillis = setWorkDurationInMillis;
+        timeLeftInMillis = currentTotalDurationInMillis;
 
-        determineViewState(isServiceRunning(PomodoroCountDownTimerService.class));
+        // Instantiate initial timer.
+        countDownTimer = new PomodoroTimer(setWorkDurationInMillis, COUNTDOWN_INTERVAL);
 
-        // Receives broadcast that the timer has stopped.
-        stoppedBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                sessionCompleteAVFeedback(context);
+        // Refers to a boolean indicating if timer is running.
+        isCountdownRunning = false;
+
+        // Refers to a boolean indicating if user is currently in the work interval.
+        isWorkMode = true;
+
+        // Create notification channels for newer APIs (26 and up)
+        createNotificationChannel();
+
+        // Update the custom app colour scheme depending on the current colour scheme.
+        updateColourSchemeColour();
+
+        // Get resources.
+        startStatusLabel = getResources().getText(R.string.start_status_label);
+        pauseStatusLabel = getResources().getText(R.string.pause_status_label);
+        resumeStatusLabel = getResources().getText(R.string.resume_status_label);
+
+        // Set up reference for main images and layout.
+        mainLayout = findViewById(R.id.mainLayout);
+
+        // Set up reference instance variables with resource.
+        countdownTimeLabel = findViewById(R.id.countdownTimer);
+        countdownProgressBar = findViewById(R.id.countdownProgressBar);
+        startPauseButton = findViewById(R.id.startPauseButton);
+        cancelButton = findViewById(R.id.cancelButton);
+        settingsButton = findViewById(R.id.settingsButton);
+
+        Typeface typeface = Typeface.createFromAsset(getAssets(),"LexendDeca-Regular.ttf");
+        countdownTimeLabel.setTypeface(typeface);
+        startPauseButton.setTypeface(typeface);
+        cancelButton.setTypeface(typeface);
+        settingsButton.setTypeface(typeface);
+
+        // Set instance variables with corresponding object listeners.
+        startPauseButton.setOnClickListener(new ButtonListener());
+        cancelButton.setOnClickListener(new ButtonListener());
+        settingsButton.setOnClickListener(new ButtonListener());
+
+        // Set up other all the other widget colour schemes now that they are referenced.
+        setProgressBarColour(colourPrimary);
+        updateWidgetColourScheme();
+        updateTimerWidgets();
+    }
+
+    //Implementing the timer
+    class PomodoroTimer extends CountDownTimer {
+
+        PomodoroTimer(long countdownInMillis, long countdownInterval) {
+            super(countdownInMillis, countdownInterval);
+
+            // Set instance variable to acknowledge new timer.
+            timeLeftInMillis = countdownInMillis;
+        }
+
+        //Timer
+        @Override
+        public void onTick(long millisUntilFinished) {
+
+            // update instance variable responsible to keep track of current timer's countdown.
+            timeLeftInMillis = millisUntilFinished;
+
+            // update widget countdown widgets and text responsible for displaying the text.
+            updateTimerWidgets();
+        }
+
+       //Finished Timer
+        @Override
+        public void onFinish() {
+
+            // Execute necessary changes and steps to set up for the next timer.
+            toggleWorkMode();
+
+            updateTimerWidgets();
+
+            // Ensure countdownLabel has the current colour for a cancelled timer.
+            countdownTimeLabel.setTextColor(colourText);
+
+            // Startup timer standby mode.
+            timerStandby();
+
+            // Send notification to notify that current timer is up.
+            sendTimerToggleNotification();
+
+        }
+    }
+
+   // Notiification Channels
+    private void createNotificationChannel() {
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+
+            // Initialize variables required to set up notification channel.
+            CharSequence name = getString(R.string.channel_name);
+            String description = getString(R.string.channel_name);
+            int importance = NotificationManager.IMPORTANCE_HIGH;
+            NotificationChannel channel = new NotificationChannel(CHANNEL_ID, name, importance);
+            channel.setDescription(description);
+
+            // Register the channel with the system. The importance or any other notification
+            // behaviors cannot be changed after this.
+            NotificationManager channelManager = getSystemService(NotificationManager.class);
+
+            // Try to register the channel with the system.
+            try {
+                channelManager.createNotificationChannel(channel);
             }
-        };
-
-        // Receives broadcast for countDown at every tick.
-        countDownReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                if (intent.getExtras() != null) {
-                    currentCountDown = intent.getExtras().getString("countDown");
-                    setTextCountDownTextView(currentCountDown);
-                }
+            catch (NullPointerException exception) {
+                Log.d("notificationChannel", "Unable to create notification channel");
             }
-        };
-
-        //Receives broadcast when timer completes its time
-        completedBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                sessionCompleteAVFeedback(context);
-            }
-        };
-
-        //Receives broadcast when timer starts
-        startBroadcastReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                sessionStartAVFeedback();
-            }
-        };
-
-        retrieveDurationValues(); //Duration values for Session and Short and Long Breaks
-        setInitialValuesOnScreen(); //Button Text and Worksession Count
-
-        alertDialog = createTametuCompletionAlertDialog();
-        displayTametuCompletionAlertDialog();
-
-        final SharedPreferences prefs = PreferenceManager
-                .getDefaultSharedPreferences(this);
-
-        preferences.registerOnSharedPreferenceChangeListener(this);
-
+        }
     }
 
-    private void determineViewState(boolean serviceRunning) {
-        // Set button as checked if the service is already running.
-        timerButton.setChecked(serviceRunning);
-    }
+    //inform the user whether they have finished the timer
+    private void sendTimerToggleNotification() {
 
-    private void sessionStartAVFeedback() {
-        ToggleButton toggleButton = findViewById(R.id.timer_button_main);
-        toggleButton.setChecked(true);
-    }
-
-    private void setInitialValuesOnScreen() {
-        // Changing textOn & textOff according to value of currentlyRunningServiceType.
-        currentlyRunningServiceType = PomodoroUtils.retrieveCurrentlyRunningServiceType(preferences, this);
-        changeToggleButtonStateText(currentlyRunningServiceType);
-    }
-
-    private void retrieveDurationValues() {
-        // Retrieving current value of Duration for POMODORO, SHORT_BREAK and
-        // LONG_BREAK from SharedPreferences.
-        workDuration = PomodoroUtils.getCurrentDurationPreferenceOf(preferences, this, POMODORO);
-        shortBreakDuration = PomodoroUtils.getCurrentDurationPreferenceOf(preferences, this, SHORT_BREAK);
-        longBreakDuration = PomodoroUtils.getCurrentDurationPreferenceOf(preferences, this, LONG_BREAK);
-
-        // Retrieving duration in mm:ss format from duration value in milliSeconds.
-        workDurationString = PomodoroUtils.getCurrentDurationPreferenceStringFor(workDuration);
-        shortBreakDurationString = PomodoroUtils.getCurrentDurationPreferenceStringFor(shortBreakDuration);
-        longBreakDurationString = PomodoroUtils.getCurrentDurationPreferenceStringFor(longBreakDuration);
-    }
-
-    private void sessionCompleteAVFeedback(Context context) {
-        // Retrieving value of currentlyRunningServiceType from SharedPreferences.
-        currentlyRunningServiceType = PomodoroUtils.retrieveCurrentlyRunningServiceType(preferences,
+        // Declare local variables used.
+        String text;
+        NotificationManagerCompat notificationManager = NotificationManagerCompat.from(
                 getApplicationContext());
-        changeToggleButtonStateText(currentlyRunningServiceType);
-        alertDialog = createTametuCompletionAlertDialog();
-        displayTametuCompletionAlertDialog();
-        //Reset Timer TextView
-        String duration = PomodoroUtils.getCurrentDurationPreferenceStringFor(PomodoroUtils.
-                getCurrentDurationPreferenceOf(preferences, context, currentlyRunningServiceType));
-        setTextCountDownTextView(duration);
-    }
 
-    private void setOnClickListeners() {
-        settingsImageView.setOnClickListener(this);
-        timerButton.setOnClickListener(this);
-        finishImageView.setOnClickListener(this);
-    }
+        // Create an explicit intent for the main activity.
+        Intent intent = new Intent(getApplicationContext(), PomodoroActivity.class);
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(getApplicationContext(),
+                0, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-    @Override
-    protected void onStart() {
-        isAppVisible = true;
-        currentlyRunningServiceType = PomodoroUtils.retrieveCurrentlyRunningServiceType(preferences, this);
-        super.onStart();
-    }
-
-    @Override
-    protected void onResume() {
-        isAppVisible = true;
-        registerLocalBroadcastReceivers();
-        // Creates new Alert Dialog.
-        alertDialog = createTametuCompletionAlertDialog();
-        displayTametuCompletionAlertDialog();
-        super.onResume();
-    }
-
-    @Override
-    protected void onPause() {
-        isAppVisible = false;
-        super.onPause();
-    }
-
-    @Override
-    protected void onStop() {
-        isAppVisible = false;
-        if (!isServiceRunning(PomodoroCountDownTimerService.class)) {
-            unregisterLocalBroadcastReceivers();
+        // Determine text to display depending on new current mode.
+        if (isWorkMode) {
+            text = "Break is over, time to get to work!";
         }
-        super.onStop();
+        else {
+            text = "You worked hard, time for a break!";
+        }
+
+        // Initiate notification with the correct/wanted properties.
+        NotificationCompat.Builder notification = new NotificationCompat.Builder(
+                getApplicationContext(), CHANNEL_ID)
+                .setSmallIcon(R.drawable.comfiler_logo)
+                .setContentTitle("ComFiler")
+                .setContentText(text)
+                .setPriority(NotificationCompat.PRIORITY_HIGH)
+                .setCategory(NotificationCompat.CATEGORY_ALARM)
+                .setContentIntent(pendingIntent)
+                .setDefaults(Notification.DEFAULT_SOUND | Notification.DEFAULT_VIBRATE)
+                .setAutoCancel(true);
+
+        // Send notification.
+        notificationManager.notify(NOTIFICATION_ID, notification.build());
     }
 
-    @Override
-    protected void onDestroy() {
-        isAppVisible = false;
-        super.onDestroy();
+    //Cancel the notification
+    private static void cancelNotification(Context context, int notifyId) {
+
+        NotificationManager cancelManager = (NotificationManager) context.getSystemService(
+                Context.NOTIFICATION_SERVICE);
+
+        try {
+            cancelManager.cancel(notifyId);
+        }
+        catch (NullPointerException exception) {
+            Log.d("cancelNotification", "Attempted to cancel non-existent notification");
+        }
     }
 
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        currentCountDown = countDownTextView.getText().toString();
-        outState.putString("currentCountDown", currentCountDown);
-    }
+    //Inner class for button listeners
+    class ButtonListener implements View.OnClickListener {
 
-    @Override
-    protected void onRestoreInstanceState(Bundle savedInstanceState) {
-        super.onRestoreInstanceState(savedInstanceState);
-        currentCountDown = savedInstanceState.getString("currentCountDown");
-        setTextCountDownTextView(currentCountDown);
-    }
+        //This method is automatically called when any button within main activity is pressed.
+        @Override
+        public void onClick( View v ) {
 
-    @Override
-    public void onClick(View v) {
-        registerLocalBroadcastReceivers();
+            // Cancel notifications, state of main activity has changed.
+            cancelNotification(getApplicationContext(), NOTIFICATION_ID);
 
-        // Retrieving value of currentlyRunningServiceType from SharedPreferences.
-        currentlyRunningServiceType = PomodoroUtils.retrieveCurrentlyRunningServiceType(preferences, this);
-
-        // Switch case to handle different button clicks
-        switch (v.getId()) {
-
-            // Settings button is clicked
-            case R.id.settings_imageview_main:
-                // launch PomodoroSettingsActivity
-                Intent intent = new Intent(PomodoroActivity.this, PomodoroSettingsActivity.class);
-                startActivity(intent);
-                overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left);
-                break;
-
-            case R.id.timer_button_main:
-                Date date = new Date(System.currentTimeMillis()); //or simply new Date();
-                long millis = date.getTime();
-                int resume = (int) millis / 1000;
-                int pause = preferences.getInt("pause", 0);
-                if ((resume - pause) >= 14400)
-                    preferences.edit().putInt(getString(R.string.work_session_count_key), 0).apply();
-
-                if (currentlyRunningServiceType == POMODORO) {
-                    if (timerButton.isChecked()) {
-                        startTimer(workDuration, this);
-                    } else {
-                        // When "Cancel Pomodoro" is clicked, service is stopped and toggleButton
-                        // is reset to "Start Pomodoro".
-                        sessionCancel(this, preferences);
-                    }
-                } else if (currentlyRunningServiceType == SHORT_BREAK) {
-                    if (timerButton.isChecked()) {
-                        startTimer(shortBreakDuration, this);
-                    } else {
-                        // When "Skip Short Break" is clicked, service is stopped and toggleButton
-                        // is reset to "Start Pomodoro".
-                        sessionCancel(this, preferences);
-                    }
-                } else if (currentlyRunningServiceType == LONG_BREAK) {
-                    if (timerButton.isChecked()) {
-                        startTimer(longBreakDuration, this);
-                    } else {
-                        // When "Skip Long Break" is clicked, service is stopped and toggleButton
-                        // is reset to "Start Pomodoro".
-                        sessionCancel(this, preferences);
-                    }
+            // Start the settings activity if the corresponding button is pressed.
+            if (v.getId() == R.id.settingsButton) {
+                openSettingsActivity();
+            }
+            // When the first timer button is pressed, run start/Resume or pause depending on state.
+            else if (v.getId() == R.id.startPauseButton) {
+                // Determine whether the timer is running to carry out specific methods.
+                if (!isCountdownRunning) {
+                    startResumeTimer();
                 }
-                break;
-
-            case R.id.finish_imageview_main:
-                if (timerButton.isChecked()) {
-                    // Finish (Complete Button) stops service and sets currentlyRunningServiceType
-                    // to SHORT_BREAK or LONG_BREAK and updates number of completed WorkSessions.
-                    sessionComplete(this);
-                }
-                break;
-        }
-    }
-
-    private void changeToggleButtonStateText(int currentlyRunningServiceType) {
-        timerButton.setChecked(isServiceRunning(PomodoroCountDownTimerService.class));
-        if (currentlyRunningServiceType == POMODORO) {
-            countDownTextView.setText(workDurationString);
-        } else if (currentlyRunningServiceType == SHORT_BREAK) {
-            countDownTextView.setText(shortBreakDurationString);
-        } else if (currentlyRunningServiceType == LONG_BREAK) {
-            countDownTextView.setText(longBreakDurationString);
-        }
-
-        timerButton.setChecked(timerButton.isChecked());
-    }
-
-    private void registerLocalBroadcastReceivers() {
-        LocalBroadcastManager.getInstance(this).registerReceiver((stoppedBroadcastReceiver),
-                new IntentFilter(STOP_ACTION_BROADCAST));
-        LocalBroadcastManager.getInstance(this).registerReceiver((countDownReceiver),
-                new IntentFilter(COUNTDOWN_BROADCAST));
-        LocalBroadcastManager.getInstance(this).registerReceiver(completedBroadcastReceiver,
-                new IntentFilter(COMPLETE_ACTION_BROADCAST));
-        LocalBroadcastManager.getInstance(this).registerReceiver(startBroadcastReceiver,
-                new IntentFilter(START_ACTION_BROADCAST));
-    }
-
-    private void unregisterLocalBroadcastReceivers() {
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(stoppedBroadcastReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(countDownReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(completedBroadcastReceiver);
-        LocalBroadcastManager.getInstance(this).unregisterReceiver(startBroadcastReceiver);
-    }
-
-    private void setTextCountDownTextView(String duration) {
-        countDownTextView.setText(duration);
-    }
-
-    private boolean isServiceRunning(Class<?> serviceClass) {
-        ActivityManager manager = (ActivityManager) getSystemService(Context.ACTIVITY_SERVICE);
-        if (manager != null) {
-            for (ActivityManager.RunningServiceInfo service : manager.getRunningServices(Integer.MAX_VALUE)) {
-                if (serviceClass.getName().equals(service.service.getClassName())) {
-                    return true;
+                else {
+                    pauseTimer();
                 }
             }
-        }
-        return false;
-    }
-
-    private AlertDialog createTametuCompletionAlertDialog() {
-        if (alertDialog != null)
-            alertDialog.cancel();
-
-        View alertDialogLayout = View.inflate(getApplicationContext(), R.layout.layout_alert_dialog, null);
-        final Button startBreakLargeButton = alertDialogLayout.findViewById(R.id.start_break);
-        final Button startOtherBreakMediumButton = alertDialogLayout.findViewById(R.id.start_other_break);
-        Button skipBreakSmallButton = alertDialogLayout.findViewById(R.id.skip_break);
-
-        if (currentlyRunningServiceType == SHORT_BREAK) {
-            startBreakLargeButton.setText(R.string.start_short_break);
-            startOtherBreakMediumButton.setText(R.string.start_long_break);
-        } else if (currentlyRunningServiceType == LONG_BREAK) {
-            startBreakLargeButton.setText(R.string.start_long_break);
-            startOtherBreakMediumButton.setText(R.string.start_short_break);
-        }
-
-        startBreakLargeButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String currentButtonText = startBreakLargeButton.getText().toString();
-                startBreakFromAlertDialog(currentButtonText);
+            // When the cancel button is pressed, call the cancelTimer method.
+            else if (v.getId() == R.id.cancelButton) {
+                cancelTimer();
             }
-        });
-
-        startOtherBreakMediumButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                String currentButtonText = startOtherBreakMediumButton.getText().toString();
-                startBreakFromAlertDialog(currentButtonText);
-            }
-        });
-
-        skipBreakSmallButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                sessionCancel(PomodoroActivity.this, preferences);
-            }
-        });
-
-        AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
-        alertDialogBuilder.setView(alertDialogLayout);
-        alertDialogBuilder.setCancelable(false);
-        return alertDialogBuilder.create();
-    }
-
-    private void displayTametuCompletionAlertDialog() {
-        if (currentlyRunningServiceType != POMODORO && isAppVisible && !alertDialog.isShowing() && !isServiceRunning(PomodoroCountDownTimerService.class)) {
-            alertDialog.show();
         }
     }
 
-    private void startBreakFromAlertDialog(String currentButtonText) {
-        long breakDuration = 0;
-        if (currentButtonText.equals(getString(R.string.start_long_break))) {
-            PomodoroUtils.updateCurrentlyRunningServiceType(preferences, getApplicationContext(), LONG_BREAK);
-            breakDuration = longBreakDuration;
-        } else if (currentButtonText.equals(getString(R.string.start_short_break))) {
-            PomodoroUtils.updateCurrentlyRunningServiceType(preferences, getApplicationContext(), SHORT_BREAK);
-            breakDuration = shortBreakDuration;
+    //Start a new Timer
+    private void startResumeTimer() {
+
+        // Instantiate timer with current time left.
+        countDownTimer = new PomodoroTimer(timeLeftInMillis, COUNTDOWN_INTERVAL);
+
+        // Make sure label is using the correct colour and start the timer.
+        countdownTimeLabel.setTextColor(colourText);
+        countDownTimer.start();
+
+        // Set timer start up mode to change anythings necessary for the running timer.
+        timerStartup();
+    }
+
+   //Pause the timer
+    private void pauseTimer() {
+
+        // cancel current timer.
+        countDownTimer.cancel();
+
+        // Set countdown label colour for better blinking colours.
+        if (isWorkMode) {
+            countdownTimeLabel.setTextColor(colourPrimary);
+        }
+        else {
+            countdownTimeLabel.setTextColor(colourSecondary);
         }
 
-        currentlyRunningServiceType = PomodoroUtils.retrieveCurrentlyRunningServiceType(preferences, getApplicationContext());
-        if (alertDialog != null)
-            alertDialog.cancel();
-        registerLocalBroadcastReceivers();
-        changeToggleButtonStateText(currentlyRunningServiceType);
-        startTimer(breakDuration, this);
-        timerButton.setChecked(isServiceRunning(PomodoroCountDownTimerService.class));
+        // enable timer standby mode.
+        timerStandby();
+    }
+
+    // Cancel the Timer
+    private void cancelTimer() {
+
+        // Cancel the current timer, toggle work state, and update the timer widgets for display.
+        countDownTimer.cancel();
+        toggleWorkMode();
+        updateTimerWidgets();
+
+        // Ensure countdownLabel has the current colour for a cancelled timer.
+        countdownTimeLabel.setTextColor(colourText);
+
+        // Enable timer standby mode.
+        timerStandby();
+    }
+
+   //Timer Standby Mode
+    private void timerStandby() {
+
+        // Set resume/pause button label depending on if the timer is fresh or already used.
+        if (timeLeftInMillis != currentTotalDurationInMillis) {
+            startPauseButton.setText(resumeStatusLabel);
+        }
+        else {
+            startPauseButton.setText(startStatusLabel);
+        }
+
+        // Keep track that timer is now on standby and also start blinking.
+        isCountdownRunning = false;
+    }
+
+    // Ensure that the current timer is prepared for timer startup (running state).
+    private void timerStartup() {
+
+        // Keep track that timer is now in a running state, clear blinking.
+        isCountdownRunning = true;
+        countdownTimeLabel.clearAnimation();
+
+        // Set startPause label to pause now that the timer is running.
+        startPauseButton.setText(pauseStatusLabel);
+    }
+
+    private void updateColourSchemeColour() {
+
+        colourPrimary = getResources().getColor(R.color.card3);
+        colourSecondary = getResources().getColor(com.pratik.commonnhelper.R.color.gray);
+        colourText1 = getResources().getColor(R.color.white);
+        colourText = getResources().getColor(R.color.black);
+        colourBackground = getResources().getColor(R.color.white);
+
+    }
+
+    // update the colour of the widgets that has to be manually updated.
+    private void updateWidgetColourScheme() {
+
+        // Set colour background accordingly.
+        mainLayout.setBackgroundColor(colourBackground);
+
+        // Set label text colours accordingly.
+        startPauseButton.setTextColor(colourText1);
+        cancelButton.setTextColor(colourText1);
+        settingsButton.setTextColor(colourText1);
+        countdownTimeLabel.setTextColor(colourText);
+
+        // If on work mode, change colour for work related widgets accordingly.
+        if (isWorkMode) {
+
+            // Set countdown label with work mode colour if currently paused (not stopped, at new).
+            if (!isCountdownRunning && timeLeftInMillis != currentTotalDurationInMillis) {
+                countdownTimeLabel.setTextColor(colourPrimary);
+            }
+            // Set progress bar to work mode colour.
+            setProgressBarColour(colourPrimary);
+        }
+        // If on break mode, change colour for break related widgets accordingly.
+        else {
+
+            // Set countdown label with break mode colour if currently paused (not stopped, at new).
+            if (!isCountdownRunning && timeLeftInMillis != currentTotalDurationInMillis) {
+                countdownTimeLabel.setTextColor(colourSecondary);
+            }
+            // Set progress bar to break mode colour.
+            setProgressBarColour(colourSecondary);
+        }
+    }
+
+    //Update the color scheme
+    private void updateActivityColourScheme() {
+
+        // Update the colour scheme colours followed by the update of all widgets.
+        updateColourSchemeColour();
+        updateWidgetColourScheme();
+
+    }
+
+
+     //This method will update the current total time if required.
+
+    private void updateCurrentTotalTime() {
+
+        // If the timer is a fresh timer, update the current total time with countdown time.
+        if (timeLeftInMillis == currentTotalDurationInMillis) {
+
+            // If current state is work mode, change the total time for total work time.
+            if (isWorkMode) {
+                currentTotalDurationInMillis = setWorkDurationInMillis;
+            }
+            // If current state is break mode, change the total time for total break time.
+            else {
+                currentTotalDurationInMillis = setBreakDurationInMillis;
+            }
+
+            // Change the countdown timer to the new total time since this is a fresh start.
+            timeLeftInMillis = currentTotalDurationInMillis;
+
+            // update timer widgets for the progress bar changes along with the countdown label.
+            updateTimerWidgets();
+        }
+    }
+
+    // Change the Color of Progress Bar
+    private void setProgressBarColour(int colour) {
+
+        // User filtering to change the colour of the progress bar drawable.
+        countdownProgressBar.getProgressDrawable().setColorFilter(
+                colour, android.graphics.PorterDuff.Mode.SRC_IN);
+    }
+
+    //toggle from work mode to break mode and vise versa depending on the current
+    private void toggleWorkMode(){
+
+        // Toggle to break mode if currently in work mode.
+        if (isWorkMode) {
+
+            isWorkMode = false;
+
+            // Set total duration for the total break duration and set appropriate progress colour.
+            currentTotalDurationInMillis = setBreakDurationInMillis;
+            setProgressBarColour(colourSecondary);
+        }
+        // Toggle to work mode if currently in break mode.
+        else {
+
+            isWorkMode = true;
+
+            // Set total duration for the total work duration and set appropriate progress colour.
+            currentTotalDurationInMillis = setWorkDurationInMillis;
+            setProgressBarColour(colourPrimary);
+        }
+
+        // Create new timer based on the new total duration.
+        countDownTimer = new PomodoroTimer(currentTotalDurationInMillis, COUNTDOWN_INTERVAL);
+    }
+
+    // start a new intent to start the settings activity for receiving data changed
+
+    public void openSettingsActivity() {
+
+        // Creating new intent, passing the required variable for setting display.
+        Intent intent = new Intent(getApplicationContext(), PomodoroSettingsActivity.class);
+        intent.putExtra("setWorkDurationInMillis", setWorkDurationInMillis);
+        intent.putExtra("setBreakDurationInMillis", setBreakDurationInMillis);
+
+        // Start activity with request for to reference it again when the settings activity is done.
+        startActivityForResult(intent, REQUEST_CODE_SETTINGS);
+
     }
 
     @Override
-    public void onSharedPreferenceChanged(SharedPreferences sharedPreferences, String key) {
-        switch (key) {
-            case WORK_DURATION_KEY:
-            case SHORT_BREAK_DURATION_KEY:
-            case LONG_BREAK_DURATION_KEY:
-            case START_LONG_BREAK_AFTER_KEY:
-                retrieveDurationValues();
-                setInitialValuesOnScreen();
-                break;
+    protected void onActivityResult(int requestCode, int resultCode, Intent dataIntent) {
+
+        // Call constructor as is.
+        super.onActivityResult(requestCode, resultCode, dataIntent);
+
+        // The returned result data is identified by requestCode.
+        // The request code is specified in startActivityForResult method.
+        switch (requestCode)
+        {
+            // This request code is set by startActivityForResult(intent, REQUEST_CODE_SETTINGS).
+            case REQUEST_CODE_SETTINGS:
+
+                // If returned normally, continue to retrieve and store data.
+                if(resultCode == RESULT_OK)
+                {
+                    // Save data from key value map.
+                    setBreakDurationInMillis = dataIntent.getLongExtra("newBreakDurationInMillis",
+                            DEFAULT_BREAK_DURATION);
+                    setWorkDurationInMillis = dataIntent.getLongExtra("newWorkDurationInMillis",
+                            DEFAULT_WORK_DURATION);
+
+                    // Update theme and update current total time.
+                    updateActivityColourScheme();
+                    updateCurrentTotalTime();
+                }
         }
+    }
+
+    //Update all the countdown
+    private void updateTimerWidgets() {
+
+        // Update countdown label.
+        updateCountDownText();
+
+        // Get actual current percentage of timer.
+        int progressPercent = (int)(100.0 * timeLeftInMillis / currentTotalDurationInMillis);
+
+        // If the timer is running and percent is 0, set it to 1 to avoid confusion.
+        // This will be disregarded if timeLeftInMillis can be rounded to 0.
+        if (isCountdownRunning && progressPercent == 0 && timeLeftInMillis > 1000) {
+            countdownProgressBar.setProgress(1);
+        }
+        // Update progress bar based on current time left and total time if percent is not 0 while
+        // running.
+        else {
+            countdownProgressBar.setProgress(progressPercent);
+        }
+    }
+
+   //Update the countdown label
+    private void updateCountDownText() {
+
+        // Calculate the minutes and seconds of the total time separately.
+        int minutes = (int)(timeLeftInMillis / 1000) / 60;
+        int seconds = (int)(timeLeftInMillis / 1000) % 60;
+
+        // Set up the formatted string for display.
+        String timeLeft = String.format(Locale.getDefault(), "%02d:%02d",
+                minutes, seconds);
+
+        // Display formatted string.
+        countdownTimeLabel.setText(timeLeft);
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
     }
 }

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".flashcardactivities.AddCardActivity">
+
+    <TextView
+        android:layout_width="375dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="19dp"
+        android:layout_marginLeft="3dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="17dp"
+        android:layout_marginBottom="651dp"
+        android:fontFamily="@font/lexend_deca"
+        android:text="Question:"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        tools:ignore="MissingPrefix" />
+
+    <TextView
+        android:layout_width="379dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="16dp"
+        android:layout_marginLeft="3dp"
+        android:layout_marginTop="30dp"
+        android:layout_marginEnd="13dp"
+        android:layout_marginBottom="492dp"
+        android:fontFamily="@font/lexend_deca"
+        android:text="Answer:"
+        android:textColor="@color/black"
+        android:textSize="20sp"
+        tools:ignore="MissingPrefix" />
+
+    <ImageView
+        android:id="@+id/cancelBtn"
+        android:layout_width="181dp"
+        android:layout_height="wrap_content"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginTop="613dp"
+        android:layout_marginEnd="1dp"
+        android:layout_marginBottom="0dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:srcCompat="@drawable/ic_cancel" />
+
+    <ImageView
+        android:id="@+id/saveBtn"
+        android:layout_width="174dp"
+        android:layout_height="115dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="2dp"
+        android:layout_marginTop="614dp"
+        android:layout_marginBottom="2dp"
+        android:src="@drawable/ic_save_icon" />
+
+    <EditText
+        android:id="@+id/question"
+        android:layout_width="wrap_content"
+        android:layout_height="95dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="13dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="542dp"
+        android:background="@drawable/btn_border"
+        android:fontFamily="@font/lexend_deca"
+        android:hint="Enter the question"
+        android:inputType="textMultiLine"
+        android:padding="10dp"
+        android:textAlignment="textStart"
+        android:textSize="14sp"
+        tools:ignore="MissingPrefix" />
+
+    <EditText
+        android:id="@+id/answer"
+        android:layout_width="wrap_content"
+        android:layout_height="57dp"
+        android:layout_alignParentStart="true"
+        android:layout_alignParentEnd="true"
+        android:layout_alignParentBottom="true"
+        android:layout_marginStart="10dp"
+        android:layout_marginTop="5dp"
+        android:layout_marginEnd="14dp"
+        android:layout_marginBottom="424dp"
+        android:background="@drawable/btn_border"
+        android:fontFamily="@font/lexend_deca"
+        android:hint="Enter the answer"
+        android:inputType="textMultiLine"
+        android:padding="10dp"
+        android:textAlignment="textStart"
+        android:textSize="14sp"
+        tools:ignore="MissingPrefix" />
+</RelativeLayout>

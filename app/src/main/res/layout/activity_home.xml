@@ -1,89 +1,141 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:orientation="vertical"
     tools:context=".HomeActivity">
 
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="197dp"
-        android:layout_height="66dp"
-        android:layout_alignParentStart="true"
-        android:layout_alignParentEnd="true"
-        android:layout_marginStart="28dp"
-        android:layout_marginTop="16dp"
-        android:layout_marginEnd="186dp"
-        android:layout_marginBottom="1dp"
-        android:fontFamily="@font/lexend_deca"
-        android:text="Hello"
-        android:textColor="@color/black"
-        android:textSize="55sp" />
-
-    <androidx.constraintlayout.widget.ConstraintLayout
+    <LinearLayout
         android:layout_width="match_parent"
-        android:layout_height="40dp"
+        android:layout_height="match_parent"
         android:orientation="vertical">
 
         <TextView
-            android:id="@+id/textView3"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:id="@+id/textView2"
+            android:layout_width="197dp"
+            android:layout_height="66dp"
             android:layout_alignParentStart="true"
-            android:layout_marginStart="28dp"
-            android:fontFamily="@font/lexend_deca"
-            android:text="Today is "
-            android:textColor="@color/black"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="parent"
-            tools:layout_editor_absoluteY="0dp" />
-
-        <TextView
-            android:id="@+id/textViewDate"
-            android:layout_width="256dp"
-            android:layout_height="wrap_content"
-            android:layout_alignStart="@+id/textView3"
             android:layout_alignParentEnd="true"
-            android:layout_marginStart="72dp"
+            android:layout_marginStart="28dp"
+            android:layout_marginTop="16dp"
+            android:layout_marginEnd="186dp"
+            android:layout_marginBottom="1dp"
             android:fontFamily="@font/lexend_deca"
-            android:text="Date"
+            android:text="@string/hello"
             android:textColor="@color/black"
-            android:textSize="20sp"
-            app:layout_constraintStart_toStartOf="@+id/textView3"
-            tools:layout_editor_absoluteY="0dp" />
+            android:textSize="55sp" />
 
-    </androidx.constraintlayout.widget.ConstraintLayout>
-
-    <ScrollView
-        android:layout_width="wrap_content"
-        android:background="#F7FFFFFF"
-        android:layout_height="wrap_content">
-        <LinearLayout
+        <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_height="40dp"
+            android:orientation="vertical"
+            android:id="@+id/displaytimedate">
 
+            <TextView
+                android:id="@+id/textView3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_alignParentStart="true"
+                android:layout_marginStart="28dp"
+                android:fontFamily="@font/lexend_deca"
+                android:text="Today is "
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                app:layout_constraintBottom_toBottomOf="@id/displaytimedate"
+                app:layout_constraintEnd_toStartOf="@id/textViewDate"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="@id/displaytimedate"
+                app:layout_constraintVertical_bias="0.538" />
+
+            <TextView
+                android:id="@+id/textViewDate"
+                android:layout_width="256dp"
+                android:layout_height="wrap_content"
+                android:layout_alignStart="@+id/textView3"
+                android:layout_alignParentEnd="true"
+                android:layout_marginStart="0dp"
+                android:fontFamily="@font/lexend_deca"
+                android:text=" Date"
+                android:textColor="@color/black"
+                android:textSize="20sp"
+                app:layout_constraintBottom_toBottomOf="@id/displaytimedate"
+                app:layout_constraintTop_toTopOf="@id/displaytimedate"
+                app:layout_constraintStart_toEndOf="@id/textView3" />
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:background="#F7FFFFFF"
+            android:layout_height="wrap_content">
             <LinearLayout
-                android:layout_width="414dp"
-                android:layout_height="match_parent"
-                android:orientation="vertical"
-                android:padding="10dp">
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical">
 
-                <androidx.recyclerview.widget.RecyclerView
-                    android:id="@+id/my_recycler"
-                    android:layout_width="340dp"
-                    android:layout_height="163dp">
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="match_parent"
+                    android:orientation="vertical"
+                    android:padding="10dp">
 
-                </androidx.recyclerview.widget.RecyclerView>
+                    <androidx.recyclerview.widget.RecyclerView
+                        android:id="@+id/my_recycler"
+                        android:layout_width="match_parent"
+                        android:layout_height="163dp">
+
+                    </androidx.recyclerview.widget.RecyclerView>
+
+                </LinearLayout>
 
             </LinearLayout>
 
-        </LinearLayout>
+        </ScrollView>
 
-    </ScrollView>
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="52dp"
+            android:fontFamily="@font/lexend_deca"
+            android:text="     Study Tips"
+            android:textColor="@color/black"
+            android:textSize="20sp" />
 
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="271dp">
 
-</LinearLayout>
+            <androidx.viewpager2.widget.ViewPager2
+                android:id="@+id/viewPager2"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"
+                app:layout_constraintBottom_toBottomOf="parent"/>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+
+        <androidx.constraintlayout.widget.ConstraintLayout
+            android:layout_width="match_parent"
+            android:layout_height="88dp">
+
+            <ImageView
+                android:id="@+id/showMenuBtn"
+                android:layout_width="50dp"
+                android:layout_height="36dp"
+                android:src="@drawable/ic_main_menu_icon"
+                app:layout_constraintBottom_toBottomOf="parent"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintHorizontal_bias="0.955"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toTopOf="parent"></ImageView>
+
+        </androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+
+</ScrollView>
 

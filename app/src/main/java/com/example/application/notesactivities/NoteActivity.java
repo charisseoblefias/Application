@@ -113,8 +113,6 @@ public class NoteActivity extends NoteBaseActivity implements MainNoteClickListe
     void searchFilter(String text) {
         ArrayList<Note> tempArrayList = new ArrayList<>();
         for (Note note : noteArrayList) {
-            //or use .equal(text) with you want equal match
-            //use .toLowerCase() for better matches
 
             if (note.getTitle().contains(text) || note.getNote().contains(text)) {
                 tempArrayList.add(note);
@@ -135,11 +133,7 @@ public class NoteActivity extends NoteBaseActivity implements MainNoteClickListe
         intent.putExtra(RevealAnimation.EXTRA_CIRCULAR_REVEAL_Y, revealY);
         intent.putExtra("fromCreation", false);
         intent.putExtra("myNoteClass", note);
-
-        //just start the activity as an shared transition, but set the options bundle to null
         ActivityCompat.startActivity(this, intent, null);
-
-        //to prevent strange behaviours override the pending transitions
         overridePendingTransition(0, 0);
     }
 

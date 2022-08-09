@@ -13,6 +13,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
@@ -89,12 +90,8 @@ public class TaskAdapter extends RecyclerView.Adapter<TaskAdapter.TaskViewHolder
         popupMenu.setOnMenuItemClickListener(item -> {
             switch (item.getItemId()) {
                 case R.id.menuDelete:
-                    AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(context, R.style.AppTheme_Dialog);
-                    alertDialogBuilder.setTitle(R.string.delete_confirmation).setMessage(R.string.sureToDelete).
-                            setPositiveButton(R.string.yes, (dialog, which) -> { 
-                                deleteTaskFromId(task.getTaskId(), position);
-                            })
-                            .setNegativeButton(R.string.no, (dialog, which) -> dialog.cancel()).show();
+                    deleteTaskFromId(task.getTaskId(), position);
+                    Toast.makeText(context, "Task Deleted", Toast.LENGTH_SHORT).show();
                     break;
                 case R.id.menuUpdate:
                     CreateTaskBottomSheetFragment createTaskBottomSheetFragment = new CreateTaskBottomSheetFragment();

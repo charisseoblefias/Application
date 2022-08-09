@@ -9,18 +9,17 @@
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"
         android:fullBackupContent="@xml/backup_rules"
-        android:icon="@mipmap/ic_launcher"
+        android:icon="@drawable/comfiler_logo"
         android:label="@string/app_name"
-        android:roundIcon="@mipmap/ic_launcher_round"
+        android:roundIcon="@drawable/comfiler_logo"
         android:supportsRtl="true"
         android:theme="@style/Theme.Application"
-        tools:targetApi="31"
-        tools:ignore="GoogleAppIndexingWarning">
-
-        <service
-            android:name=".pomodorotimer.PomodoroCountDownTimerService"
-            android:enabled="true"
+        tools:ignore="GoogleAppIndexingWarning"
+        tools:targetApi="31">
+        <activity
+            android:name=".AboutUs"
             android:exported="false" />
+
         <activity
             android:name=".HomeActivity"
             android:exported="false" />
@@ -34,27 +33,23 @@
             </intent-filter>
         </activity>
         <activity android:name=".tasksactivity.ToDoActivity">
-            android:exported="false"
-        </activity>
+            android:exported="false"</activity>
         <activity android:name=".notesactivities.NoteActivity">
-            android:exported="false"
-        </activity>
+            android:exported="false"</activity>
         <activity android:name=".notesactivities.NoteEditActivityNote">
-            android:exported="false"
-        </activity>
+            android:exported="false"</activity>
         <activity android:name=".pomodoroactivities.PomodoroActivity">
             android:exported="false"
-            android:launchMode="singleTop"
-            android:screenOrientation="portrait"
-        </activity>
+            android:launchMode="singleTask"</activity>
         <activity
             android:name=".pomodoroactivities.PomodoroSettingsActivity"
-            android:label="Settings"
             android:exported="false"
-            android:parentActivityName=".pomodoroactivities.PomodoroActivity"
-            android:screenOrientation="portrait" />
-        <receiver android:name=".pomodorotimer.PomodoroStopTimerActionReceiver" />
-        <receiver android:name=".pomodorotimer.PomodoroStartTimerActionReceiver" />
+            android:launchMode="singleTask"/>
+        <activity android:name=".flashcardactivities.FlashcardActivity">
+            android:exported="false"
+        </activity>
+        <activity android:name=".flashcardactivities.AddCardActivity">
+            android:exported="false"</activity>
 
         <meta-data
             android:name="preloaded_fonts"

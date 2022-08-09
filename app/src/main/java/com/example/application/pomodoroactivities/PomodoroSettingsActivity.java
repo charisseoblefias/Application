@@ -1,176 +1,225 @@
 package com.example.application.pomodoroactivities;
 
-import static com.example.application.PomodoroUtils.PomodoroConstants.RINGING_VOLUME_LEVEL_KEY;
-import static com.example.application.PomodoroUtils.PomodoroConstants.TICKING_VOLUME_LEVEL_KEY;
-import static com.example.application.PomodoroUtils.PomodoroVolumeSeekBarUtils.convertToFloat;
-import static com.example.application.PomodoroUtils.PomodoroVolumeSeekBarUtils.floatRingingVolumeLevel;
-import static com.example.application.PomodoroUtils.PomodoroVolumeSeekBarUtils.floatTickingVolumeLevel;
-import static com.example.application.PomodoroUtils.PomodoroVolumeSeekBarUtils.initializeSeekBar;
-import static com.example.application.PomodoroUtils.PomodoroVolumeSeekBarUtils.maxVolume;
-
+import android.app.Activity;
+import android.content.Intent;
 import android.content.SharedPreferences;
+import android.graphics.Typeface;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.preference.PreferenceManager;
-import android.view.MenuItem;
 import android.view.View;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.widget.ImageButton;
 import android.widget.SeekBar;
-import android.widget.Spinner;
+import android.widget.TextView;
 
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.core.app.NavUtils;
+import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.example.application.R;
 
-import butterknife.BindView;
-import butterknife.ButterKnife;
+public class PomodoroSettingsActivity extends Activity {
 
-public class PomodoroSettingsActivity extends AppCompatActivity implements AdapterView.OnItemSelectedListener, SeekBar.OnSeekBarChangeListener {
+    // Declare instance variables for the settings activity.
+    private final static long DEFAULT_WORK_DURATION = 1500000;
+    private final static long DEFAULT_BREAK_DURATION = 300000;
+    private ImageButton timerButton;
+    private SeekBar breakSeekBar;
+    private SeekBar workSeekBar;
+    private TextView breakStatusView;
+    private TextView workStatusView;
+    private TextView breakLabel;
+    private TextView workLabel;
+    private TextView settingslabel;
+    private ConstraintLayout settingsLayout;
+    private Drawable lightTimerButtonImage;
+    private int breakStatus;
+    private int workStatus;
+    private boolean isLightTheme;
+    private long newBreakDurationInMillis;
+    private long newWorkDurationInMillis;
+    private final static int minTimeInMinutes = 1;
 
-    @BindView(R.id.work_duration_spinner)
-    Spinner workDurationSpinner;
-    @BindView(R.id.short_break_duration_spinner)
-    Spinner shortBreakDurationSpinner;
-    @BindView(R.id.long_break_duration_spinner)
-    Spinner longBreakDurationSpinner;
-    @BindView(R.id.start_long_break_after_spinner)
-    Spinner startlongbreakafterSpinner;
-    @BindView(R.id.ticking_seek_bar)
-    SeekBar tickingSeekBar;
-    @BindView(R.id.ringing_seek_bar)
-    SeekBar ringingSeekBar;
-    private SharedPreferences preferences;
+    // Declare reference for a SharedPreferences object
+    private SharedPreferences savedPrefs;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.pomodoro_settings);
+        setContentView(R.layout.activity_pomodoro_settings);
 
-        ButterKnife.bind(this);
+        // Set up reference for main images and layout.
+        settingsLayout = findViewById(R.id.settingsLayout);
+        lightTimerButtonImage = getResources().getDrawable(R.drawable.ic_back);
 
-        preferences = PreferenceManager.getDefaultSharedPreferences(this);
+        // Set up reference instance variables with resource.
+        timerButton = findViewById(R.id.timerButton);
+        breakSeekBar = findViewById(R.id.breakSeekBar);
+        workSeekBar = findViewById(R.id.workSeekBar);
+        breakLabel = findViewById(R.id.breakLabel);
+        settingslabel = findViewById(R.id.settingslabel);
+        breakStatusView = findViewById(R.id.breakStatusView);
+        workLabel = findViewById(R.id.workLabel);
+        workStatusView = findViewById(R.id.workStatusView);
 
-        initSpinner();
+        Typeface typeface = Typeface.createFromAsset(getAssets(),"LexendDeca-Regular.ttf");
+        breakLabel.setTypeface(typeface);
+        workLabel.setTypeface(typeface);
+        settingslabel.setTypeface(typeface);
+        workStatusView.setTypeface(typeface);
+        breakStatusView.setTypeface(typeface);
 
-        seekBarInitialization();
-    }
+        // Set instance variables with corresponding object listeners.
+        timerButton.setOnClickListener(new ButtonListener());
+        breakSeekBar.setOnSeekBarChangeListener(new SeekBarListener());
+        workSeekBar.setOnSeekBarChangeListener(new SeekBarListener());
 
-    private void seekBarInitialization() {
-        tickingSeekBar = initializeSeekBar(this, tickingSeekBar);
-        ringingSeekBar = initializeSeekBar(this, ringingSeekBar);
-        tickingSeekBar.setOnSeekBarChangeListener(this);
-        ringingSeekBar.setOnSeekBarChangeListener(this);
-    }
+        // Get variables from main activity, where this activity is called.
+        Intent intent = getIntent();
 
-    private void initSpinner() {
-        // Create an array adapter for all three spinners using the string array
-        ArrayAdapter<CharSequence> workDurationAdapter = ArrayAdapter.createFromResource(this,
-                R.array.work_duration_array, R.layout.spinner_item);
-        ArrayAdapter<CharSequence> shortBreakDurationAdapter = ArrayAdapter.createFromResource(this,
-                R.array.short_break_duration_array, R.layout.spinner_item);
-        ArrayAdapter<CharSequence> longBreakDurationAdapter = ArrayAdapter.createFromResource(this,
-                R.array.long_break_duration_array, R.layout.spinner_item);
-        ArrayAdapter<CharSequence> startlongbreakafterAdapter = ArrayAdapter.createFromResource(this,
-                R.array.start_long_break_after_array, R.layout.spinner_item);
+        // Save appropriate variables retrieved from main to display current user settings.
+        isLightTheme = intent.getBooleanExtra("isLightTheme", true);
+        newBreakDurationInMillis = intent.getLongExtra("setBreakDurationInMillis",
+                DEFAULT_BREAK_DURATION);
+        newWorkDurationInMillis = intent.getLongExtra("setWorkDurationInMillis",
+                DEFAULT_WORK_DURATION);
+        breakStatus = convertMillisToMin(newBreakDurationInMillis);
+        workStatus = convertMillisToMin(newWorkDurationInMillis);
 
-        // Layout to use when list of choices appears
-        workDurationAdapter.setDropDownViewResource(R.layout.spinner_item);
-        shortBreakDurationAdapter.setDropDownViewResource(R.layout.spinner_item);
-        longBreakDurationAdapter.setDropDownViewResource(R.layout.spinner_item);
-        startlongbreakafterAdapter.setDropDownViewResource(R.layout.spinner_item);
-
-        // Apply the adapter to the spinner
-        workDurationSpinner.setAdapter(workDurationAdapter);
-        shortBreakDurationSpinner.setAdapter(shortBreakDurationAdapter);
-        longBreakDurationSpinner.setAdapter(longBreakDurationAdapter);
-        startlongbreakafterSpinner.setAdapter(startlongbreakafterAdapter);
-
-        // Set the default selection
-        workDurationSpinner.setSelection(preferences.getInt(getString(R.string.work_duration_key), 1));
-        shortBreakDurationSpinner.setSelection(preferences.getInt(getString(R.string.short_break_duration_key), 1));
-        longBreakDurationSpinner.setSelection(preferences.getInt(getString(R.string.long_break_duration_key), 1));
-        startlongbreakafterSpinner.setSelection(preferences.getInt(getString((R.string.start_long_break_after_key)), 2));
-
-        workDurationSpinner.setOnItemSelectedListener(this);
-        shortBreakDurationSpinner.setOnItemSelectedListener(this);
-        longBreakDurationSpinner.setOnItemSelectedListener(this);
-        startlongbreakafterSpinner.setOnItemSelectedListener(this);
+        // get SharedPreferences object for saving variables onPause.
+        savedPrefs = getSharedPreferences( "SettingsPrefs", MODE_PRIVATE );
 
     }
 
-    @Override
-    public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-        // initialize the editor
-        SharedPreferences.Editor editor = preferences.edit();
-        // switch case to handle different spinners
-        switch (parent.getId()) {
-            // item selected in work duration spinner
-            case R.id.work_duration_spinner:
-                // save the corresponding item position
-                editor.putInt(getString(R.string.work_duration_key), position);
-                break;
-            // item selected in short break duration spinner
-            case R.id.short_break_duration_spinner:
-                // save the corresponding item position
-                editor.putInt(getString(R.string.short_break_duration_key), position);
-                break;
-            // item selected in long break duration spinner
-            case R.id.long_break_duration_spinner:
-                // save the corresponding item position
-                editor.putInt(getString(R.string.long_break_duration_key), position);
-            case R.id.start_long_break_after_spinner:
-                // save the corresponding item position
-                editor.putInt(getString(R.string.start_long_break_after_key), position);
+    //Seek Bar Listener
+    class SeekBarListener implements SeekBar.OnSeekBarChangeListener {
 
+        @Override
+        public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
+
+            // Declare local variables.
+            String statusView;
+
+            // If the break seek bar is changed, set text view for break status.
+            if (seekBar.getId() == R.id.breakSeekBar) {
+                // Get status, add minTime to accommodated for min value of 1 in seek bar.
+                breakStatus = progress + minTimeInMinutes;
+
+                // Decide to use singular version of minute if appropriate.
+                if (breakStatus == 1) {
+                    statusView = breakStatus + " Minute";
+                }
+                else {
+                    statusView = breakStatus + " Minutes";
+                }
+
+                // Set break status and save new break duration in millis.
+                breakStatusView.setText(statusView);
+                newBreakDurationInMillis = convertMinToMillis(breakStatus);
+            }
+
+            // If the work seek bar is changed, set text view for work status.
+            else if (seekBar.getId() == R.id.workSeekBar) {
+                // Get status, add minTime to accommodated for min value of 1 in seek bar.
+                workStatus = progress+minTimeInMinutes;
+
+                // Decide to use singular version of minute if appropriate.
+                if (workStatus == 1) {
+                    statusView = workStatus + " Minute";
+                }
+                else {
+                    statusView = workStatus + " Minutes";
+                }
+
+                // Set work status and save new work duration in millis.
+                workStatusView.setText(statusView);
+                newWorkDurationInMillis = convertMinToMillis(workStatus);
+            }
         }
-        editor.apply();
+
+        @Override
+        public void onStartTrackingTouch(SeekBar seekBar) {
+            // Called when the user starts changing the SeekBar
+            // Not Used / Implemented
+        }
+
+        @Override
+        public void onStopTrackingTouch(SeekBar seekBar) {
+            // Called when the user finishes changing the SeekBar
+            // Not Used / Implemented
+        }
+
+    }
+
+    class ButtonListener implements View.OnClickListener {
+
+        @Override
+        public void onClick(View v) {
+
+            // If the timer button is pressed, return to main activity.
+            if (v.getId() == R.id.timerButton) {
+                exitToTimerActivity();
+            }
+        }
+    }
+
+    public void exitToTimerActivity() {
+
+        // Create the intent for saving variables back to main.
+        Intent intent = new Intent();
+
+        // Save variables as key value pairs.
+        intent.putExtra("isLightTheme", isLightTheme);
+        intent.putExtra("newBreakDurationInMillis", newBreakDurationInMillis);
+        intent.putExtra("newWorkDurationInMillis", newWorkDurationInMillis);
+
+        // Set result to ok code to declare that app has return normally.
+        setResult(RESULT_OK, intent);
+
+        // Finish settings activity, return to main activity.
+        finish();
+   }
+
+   private long convertMinToMillis(int minutes) {
+
+       // Return operation, converting minutes to milliseconds.
+        return (minutes * 60 * 1000);
+
+   }
+
+
+    private int convertMillisToMin(long millis) {
+
+        // Return operation from millis to minutes.
+        return ((int)(millis / 60 / 1000));
+
     }
 
     @Override
-    public void onNothingSelected(AdapterView<?> parent) {
+    public void onPause() {
+        // Save the billAmountString and tipPercentage instance variables
+        SharedPreferences.Editor prefsEditor = savedPrefs.edit();
+        prefsEditor.putInt("breakStatus", breakStatus);
+        prefsEditor.putInt("workStatus", workStatus);
+        prefsEditor.commit();
 
+        // Calling the parent onPause() must be done LAST
+        super.onPause();
+    }
+
+    @Override
+    public void onResume() {
+
+        // Call progress required for on resume call.
+        super.onResume();
+
+        // Load the instance variables back (or default values)
+        breakStatus = savedPrefs.getInt("breakStatus", 5);
+        workStatus = savedPrefs.getInt("workStatus", 25);
     }
 
     @Override
     public void onBackPressed() {
-        super.onBackPressed();
-        NavUtils.navigateUpFromSameTask(this);
-        overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
+        // Uses standard exit method when back is pressed.
+        exitToTimerActivity();
     }
 
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case android.R.id.home:
-                NavUtils.navigateUpFromSameTask(this);
-                overridePendingTransition(R.anim.slide_in_left, R.anim.slide_out_right);
-                return true;
-        }
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
-    public void onProgressChanged(SeekBar seekBar, int progress, boolean fromUser) {
-        switch (seekBar.getId()) {
-            case R.id.ticking_seek_bar:
-                preferences.edit().putInt(TICKING_VOLUME_LEVEL_KEY, progress).apply(); //Save volume level to SharedPreferences
-                floatTickingVolumeLevel = convertToFloat(preferences.getInt(TICKING_VOLUME_LEVEL_KEY, maxVolume), maxVolume);
-                break;
-            case R.id.ringing_seek_bar:
-                preferences.edit().putInt(RINGING_VOLUME_LEVEL_KEY, progress).apply(); //Save value to SharedPreferences
-                floatRingingVolumeLevel = convertToFloat(preferences.getInt(RINGING_VOLUME_LEVEL_KEY, maxVolume), maxVolume);
-        }
-
-    }
-
-    @Override
-    public void onStartTrackingTouch(SeekBar seekBar) {
-
-    }
-
-    @Override
-    public void onStopTrackingTouch(SeekBar seekBar) {
-
-    }
 }
+
